@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asteroid Gamble</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #05010f;
+    color: #e8e0ff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    background-image: radial-gradient(circle at 20% 30%, #1a0a3a 0%, transparent 50%),
+                      radial-gradient(circle at 80% 70%, #0a1a3a 0%, transparent 50%);
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #c8b8ff;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    color: #6a5a8a;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #120825;
+    border: 1px solid #2e1a5e;
+    border-radius: 12px;
+    padding: 12px 24px;
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+  }
+
+  .hud .ast-icon { font-size: 1.4rem; }
+  .hud .ast-count { font-size: 1.5rem; font-weight: 700; color: #f0d060; }
+  .hud .ast-label { color: #9a8aba; font-size: 0.85rem; }
+
+  .main-card {
+    background: #0d0520;
+    border: 1px solid #2e1a5e;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #6a5a8a;
+    margin-bottom: 8px;
+  }
+
+  .bet-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    background: #1a0a3a;
+    border: 1px solid #3e2a6e;
+    border-radius: 8px;
+    color: #e8e0ff;
+    font-size: 1rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="number"]:focus { border-color: #8060d0; }
+  input[type="number"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  button {
+    border: 1px solid #3e2a6e;
+    border-radius: 8px;
+    background: #1a0a3a;
+    color: #c8b8ff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+
+  button:hover:not(:disabled) { background: #2a1a5a; border-color: #7a5ace; }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-primary {
+    background: #4a28a0;
+    border-color: #7a5ace;
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: #5a38b8; }
+
+  .btn-danger {
+    background: #3a0a1a;
+    border-color: #a03060;
+    color: #ff8aaa;
+  }
+  .btn-danger:hover:not(:disabled) { background: #4a1a2a; }
+
+  .btn-success {
+    background: #0a2a1a;
+    border-color: #30a060;
+    color: #60e0a0;
+  }
+  .btn-success:hover:not(:disabled) { background: #0a3a2a; }
+
+  .btn-gold {
+    background: #2a1a00;
+    border-color: #c09020;
+    color: #f0d060;
+  }
+  .btn-gold:hover:not(:disabled) { background: #3a2a00; }
+
+  .btn-info {
+    background: #0a1a3a;
+    border-color: #2060c0;
+    color: #80b0ff;
+  }
+  .btn-info:hover:not(:disabled) { background: #0a2a4a; }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .slider-section {
+    margin-bottom: 20px;
+  }
+
+  .slider-track {
+    position: relative;
+    background: #1a0a3a;
+    border: 1px solid #3e2a6e;
+    border-radius: 10px;
+    height: 80px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .slider-track:active { cursor: grabbing; }
+
+  .slider-inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 12px;
+    gap: 16px;
+    width: max-content;
+    transition: none;
+  }
+
+  .planet-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 64px;
+  }
+
+  .planet-img {
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+
+  .planet-name {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: #7a6a9a;
+    text-transform: uppercase;
+  }
+
+  .slider-hint {
+    font-size: 0.72rem;
+    color: #4a3a6a;
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  .roll-section {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .roll-display {
+    background: #1a0a3a;
+    border: 1px solid #3e2a6e;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 14px;
+    display: none;
+  }
+
+  .roll-display.visible { display: block; }
+
+  .roll-planets {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .roll-result {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .result-win { color: #60e0a0; }
+  .result-lose { color: #ff6080; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,1,15,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+
+  .overlay.hidden { display: none; }
+
+  .overlay-box {
+    background: #120825;
+    border: 1px solid #4e2a8e;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .overlay-box h2 {
+    font-size: 1.3rem;
+    color: #c8b8ff;
+    margin-bottom: 12px;
+  }
+
+  .number-display {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f0d060;
+    letter-spacing: 4px;
+    margin: 16px 0;
+    font-family: monospace;
+  }
+
+  .timer-bar-wrap {
+    background: #1a0a3a;
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .timer-bar {
+    height: 100%;
+    background: #8060d0;
+    transition: width 1s linear;
+  }
+
+  input[type="text"] {
+    background: #1a0a3a;
+    border: 1px solid #3e2a6e;
+    border-radius: 8px;
+    color: #e8e0ff;
+    font-size: 1.2rem;
+    padding: 10px 14px;
+    width: 100%;
+    outline: none;
+    text-align: center;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+
+  input[type="text"]:focus { border-color: #8060d0; }
+
+  .math-section { display: none; }
+  .math-section.visible { display: block; }
+
+  .math-progress {
+    font-size: 0.8rem;
+    color: #6a5a8a;
+    margin-bottom: 12px;
+  }
+
+  .math-question {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #c8b8ff;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .msg {
+    font-size: 0.82rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: none;
+  }
+  .msg.visible { display: block; }
+  .msg.error { background: #2a0a1a; color: #ff8aaa; border: 1px solid #6a2040; }
+  .msg.success-msg { background: #0a2a1a; color: #60e0a0; border: 1px solid #206a40; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #1e0a3e;
+    margin: 20px 0;
+  }
+
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle var(--d) var(--delay) infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--op); }
+  }
+
+  .main-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .roll-btn-wrap {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="main-wrap">
+  <h1>☄️ ASTEROID GAMBLE</h1>
+  <p class="subtitle">Space Casino · No Real Money</p>
+
+  <div class="hud">
+    <span class="ast-icon">🪨</span>
+    <span class="ast-count" id="balance-display">0</span>
+    <span class="ast-label">asteroids</span>
+  </div>
+
+  <div class="main-card">
+
+    <!-- BET INPUT -->
+    <p class="section-label">Place your bet</p>
+    <div class="bet-row">
+      <input type="number" id="bet-input" min="1" placeholder="How many asteroids?" />
+      <button class="btn-primary" id="place-bet-btn" onclick="placeBet()">Place Bet</button>
+    </div>
+
+    <div id="msg-bet" class="msg error"></div>
+
+    <!-- SLIDER -->
+    <div class="slider-section" id="slider-section" style="display:none;">
+      <p class="section-label">Slide to see your odds</p>
+      <div class="slider-track" id="slider-track">
+        <div class="slider-inner" id="slider-inner"></div>
+      </div>
+      <p class="slider-hint">← drag to reveal planets — release to hide →</p>
+    </div>
+
+    <hr class="divider" id="action-divider" style="display:none;">
+
+    <!-- ACTION BUTTONS -->
+    <div class="action-grid" id="action-grid" style="display:none;">
+      <button class="btn-info" id="btn-retry" onclick="doRetry()" disabled>🔄 Retry</button>
+      <button class="btn-danger" id="btn-backout" onclick="doBackOut()">💨 Back Out <span style="font-size:0.75rem;opacity:0.7;">(-2 🪨)</span></button>
+      <button class="btn-gold" id="btn-allin" onclick="doAllIn()">⚡ All In</button>
+      <button class="btn-info" id="btn-standby" onclick="doStandby()">🧠 Standby</button>
+    </div>
+
+    <hr class="divider" id="roll-divider" style="display:none;">
+
+    <!-- ROLL -->
+    <div class="roll-section" id="roll-section" style="display:none;">
+      <div class="roll-btn-wrap">
+        <button class="btn-primary" id="roll-btn" onclick="doRoll(false)" style="font-size:1rem;padding:12px 32px;">🎲 Roll</button>
+        <button class="btn-gold" id="roll-btn-2" onclick="doRoll(true)" style="display:none;font-size:1rem;padding:12px 24px;">🎲 Roll Again</button>
+      </div>
+      <div class="roll-display" id="roll-display">
+        <div class="roll-planets" id="roll-planets"></div>
+        <div class="roll-result" id="roll-result"></div>
+      </div>
+    </div>
+
+    <!-- MATH CHALLENGE -->
+    <div class="math-section" id="math-section">
+      <hr class="divider">
+      <p class="section-label">Out of asteroids — solve to earn 50 🪨</p>
+      <div class="math-progress" id="math-progress">Question 1 / 10</div>
+      <div class="math-question" id="math-question"></div>
+      <input type="number" id="math-input" placeholder="Your answer" onkeydown="mathKeydown(event)" />
+      <button class="btn-primary" onclick="checkMath()">Submit</button>
+      <div id="math-msg" class="msg error"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STANDBY OVERLAY -->
+<div class="overlay hidden" id="standby-overlay">
+  <div class="overlay-box">
+    <h2>🧠 Standby Challenge</h2>
+    <p id="standby-instruction" style="color:#9a8aba;font-size:0.9rem;margin-bottom:8px;">Memorize these 7 numbers</p>
+    <div class="number-display" id="standby-numbers"></div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+    <input type="text" id="standby-input" placeholder="Type the numbers..." style="display:none;" oninput="filterStandbyInput(this)" />
+    <button class="btn-primary" id="standby-submit-btn" style="display:none;" onclick="checkStandby()">Submit</button>
+    <div id="standby-msg" class="msg error"></div>
+    <div id="standby-fail-btns" style="display:none;margin-top:12px;">
+      <p style="color:#9a8aba;font-size:0.85rem;margin-bottom:10px;">You missed it. Choose a penalty:</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-danger" id="penalty-plus-btn" onclick="applyPenaltyPlus()"></button>
+        <button class="btn-info" id="penalty-minus-btn" onclick="applyPenaltyMinus()">-10 🪨</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── STATE ── */
+const PLANET_DATA = [
+  { name: 'Jupiter', emoji: '🟠' },
+  { name: 'Neptune', emoji: '🔵' },
+  { name: 'Saturn',  emoji: '🪐' },
+  { name: 'Venus',   emoji: '🟡' },
+];
+
+let state = {
+  balance: 0,
+  currentBet: 0,
+  sliderPlanets: [],
+  sliderUsed: false,
+  retryUsed: false,
+  betPlaced: false,
+  rollDone: false,
+  doubleRoll: false,
+  firstRollDone: false,
+  standbyNumbers: [],
+  pendingPenalty: 0,
+};
+
+/* ── INIT ── */
+function init() {
+  generateStars();
+  const saved = localStorage.getItem('ast_balance');
+  state.balance = saved === null ? 60 : parseInt(saved, 10);
+  saveBalance();
+  renderBalance();
+  checkBankrupt();
+}
+
+function saveBalance() {
+  localStorage.setItem('ast_balance', state.balance);
+}
+
+function renderBalance() {
+  document.getElementById('balance-display').textContent = state.balance;
+}
+
+/* ── STARS ── */
+function generateStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${(Math.random()*4+2).toFixed(1)}s;
+      --delay:${(Math.random()*5).toFixed(1)}s;
+      --op:${(Math.random()*0.6+0.2).toFixed(2)};
+    `;
+    container.appendChild(s);
+  }
+}
+
+/* ── SLIDER ── */
+function buildSlider() {
+  const planets = [];
+  for (let i = 0; i < 4; i++) {
+    planets.push(PLANET_DATA[Math.floor(Math.random() * 4)]);
+  }
+  state.sliderPlanets = planets;
+
+  const inner = document.getElementById('slider-inner');
+  inner.innerHTML = '';
+  planets.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'planet-item';
+    el.innerHTML = `<span class="planet-img">${p.emoji}</span><span class="planet-name">${p.name}</span>`;
+    inner.appendChild(el);
+  });
+
+  setupSliderDrag();
+}
+
+function setupSliderDrag() {
+  const track = document.getElementById('slider-track');
+  const inner = document.getElementById('slider-inner');
+  let dragging = false;
+  let startX = 0;
+  let scrollStart = 0;
+  let currentScroll = 0;
+
+  inner.style.transform = 'translateX(-9999px)';
+
+  function onDown(e) {
+    if (state.sliderUsed) return;
+    dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    scrollStart = currentScroll;
+    inner.style.transition = 'none';
+    inner.style.transform = `translateX(${currentScroll}px)`;
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const dx = x - startX;
+    const maxScroll = 0;
+    const minScroll = -(inner.scrollWidth - track.clientWidth + 24);
+    currentScroll = Math.max(minScroll, Math.min(maxScroll, scrollStart + dx));
+    inner.style.transform = `translateX(${currentScroll}px)`;
+    e.preventDefault();
+  }
+
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    inner.style.transform = 'translateX(-9999px)';
+    state.sliderUsed = true;
+    document.getElementById('btn-retry').disabled = state.retryUsed;
+  }
+
+  track.addEventListener('mousedown', onDown);
+  track.addEventListener('touchstart', onDown, { passive: false });
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onUp);
+  window.addEventListener('touchend', onUp);
+}
+
+/* ── PLACE BET ── */
+function placeBet() {
+  const input = document.getElementById('bet-input');
+  const val = parseInt(input.value, 10);
+  const msg = document.getElementById('msg-bet');
+
+  if (!val || val < 1) { showMsg(msg, 'Enter a valid bet.'); return; }
+  if (val > state.balance) { showMsg(msg, "You don't have enough asteroids!"); return; }
+
+  hideMsg(msg);
+  state.currentBet = val;
+  state.betPlaced = true;
+  state.rollDone = false;
+  state.doubleRoll = false;
+  state.firstRollDone = false;
+  state.sliderUsed = false;
+  state.retryUsed = false;
+
+  document.getElementById('bet-input').disabled = true;
+  document.getElementById('place-bet-btn').disabled = true;
+
+  buildSlider();
+
+  show('slider-section');
+  show('action-divider');
+  show('action-grid');
+  show('roll-divider');
+  show('roll-section');
+
+  document.getElementById('btn-retry').disabled = true;
+  document.getElementById('roll-btn').disabled = false;
+  document.getElementById('roll-btn-2').style.display = 'none';
+  document.getElementById('roll-display').classList.remove('visible');
+}
+
+/* ── RETRY ── */
+function doRetry() {
+  if (state.retryUsed) return;
+  state.retryUsed = true;
+  state.sliderUsed = false;
+  document.getElementById('btn-retry').disabled = true;
+  buildSlider();
+}
+
+/* ── BACK OUT ── */
+function doBackOut() {
+  if (state.balance < 2) {
+    state.balance = Math.max(0, state.balance - 2);
+  } else {
+    state.balance -= 2;
+  }
+  saveBalance();
+  renderBalance();
+  resetBetUI();
+  checkBankrupt();
+}
+
+/* ── ALL IN ── */
+function doAllIn() {
+  state.currentBet = state.balance;
+  document.getElementById('bet-input').value = state.balance;
+  doRoll(false, true);
+}
+
+/* ── STANDBY ── */
+function doStandby() {
+  const nums = Array.from({ length: 7 }, () => Math.floor(Math.random() * 9) + 1);
+  state.standbyNumbers = nums;
+
+  document.getElementById('standby-numbers').textContent = nums.join(' ');
+  document.getElementById('standby-instruction').textContent = 'Memorize these 7 numbers!';
+  document.getElementById('standby-input').style.display = 'none';
+  document.getElementById('standby-submit-btn').style.display = 'none';
+  document.getElementById('standby-fail-btns').style.display = 'none';
+  document.getElementById('standby-msg').classList.remove('visible');
+  document.getElementById('standby-input').value = '';
+  document.getElementById('timer-bar').style.width = '100%';
+
+  document.getElementById('standby-overlay').classList.remove('hidden');
+
+  let secs = 8;
+  const bar = document.getElementById('timer-bar');
+  const interval = setInterval(() => {
+    secs--;
+    bar.style.width = ((secs / 8) * 100) + '%';
+    if (secs <= 0) {
+      clearInterval(interval);
+      document.getElementById('standby-numbers').style.display = 'none';
+      document.getElementById('standby-instruction').textContent = 'Now retype the numbers (no spaces):';
+      document.getElementById('standby-input').style.display = 'block';
+      document.getElementById('standby-submit-btn').style.display = 'inline-block';
+      document.getElementById('standby-input').focus();
+    }
+  }, 1000);
+}
+
+function filterStandbyInput(el) {
+  el.value = el.value.replace(/[^0-9]/g, '').slice(0, 7);
+}
+
+function checkStandby() {
+  const input = document.getElementById('standby-input').value.trim();
+  const correct = state.standbyNumbers.join('');
+  const msg = document.getElementById('standby-msg');
+
+  if (input === correct) {
+    state.doubleRoll = true;
+    document.getElementById('standby-overlay').classList.add('hidden');
+    document.getElementById('standby-numbers').style.display = 'flex';
+    showMsg(msg, '');
+    showToast('✅ You got it! You can roll twice.');
+    document.getElementById('roll-btn-2').style.display = 'inline-block';
+  } else {
+    showMsg(msg, `Wrong! The numbers were: ${state.standbyNumbers.join(' ')}`);
+    document.getElementById('standby-fail-btns').style.display = 'block';
+    const extra = Math.ceil(state.currentBet * 0.5);
+    state.pendingPenalty = extra;
+    document.getElementById('penalty-plus-btn').textContent = `+${extra} 🪨 to bet`;
+    document.getElementById('standby-input').style.display = 'none';
+    document.getElementById('standby-submit-btn').style.display = 'none';
+  }
+}
+
+function applyPenaltyPlus() {
+  const extra = state.pendingPenalty;
+  if (state.balance < state.currentBet + extra) {
+    showToast('⚠️ Not enough asteroids yet — saved for later.');
+  } else {
+    state.currentBet += extra;
+    showToast(`Bet increased to ${state.currentBet} 🪨`);
+  }
+  document.getElementById('standby-overlay').classList.add('hidden');
+  document.getElementById('standby-numbers').style.display = 'flex';
+}
+
+function applyPenaltyMinus() {
+  state.balance = Math.max(0, state.balance - 10);
+  saveBalance();
+  renderBalance();
+  document.getElementById('standby-overlay').classList.add('hidden');
+  document.getElementById('standby-numbers').style.display = 'flex';
+  checkBankrupt();
+  showToast('-10 🪨 deducted.');
+}
+
+/* ── ROLL ── */
+function doRoll(isSecond = false, allIn = false) {
+  if (allIn) {
+    state.currentBet = state.balance;
+  }
+
+  const rollPlanets = Array.from({ length: 4 }, () => PLANET_DATA[Math.floor(Math.random() * 4)]);
+
+  const display = document.getElementById('roll-display');
+  const planetsEl = document.getElementById('roll-planets');
+  const resultEl = document.getElementById('roll-result');
+
+  planetsEl.textContent = rollPlanets.map(p => p.emoji).join('  ');
+
+  const uniquePlanets = [...new Set(rollPlanets.map(p => p.name))];
+  const win = uniquePlanets.length === 1;
+
+  if (win) {
+    resultEl.textContent = `🎉 4 ${rollPlanets[0].name}s! You win ${state.currentBet} 🪨!`;
+    resultEl.className = 'roll-result result-win';
+    state.balance += state.currentBet;
+  } else {
+    resultEl.textContent = `❌ No match. -${state.currentBet} 🪨`;
+    resultEl.className = 'roll-result result-lose';
+    state.balance -= state.currentBet;
+    if (state.balance < 0) state.balance = 0;
+  }
+
+  display.classList.add('visible');
+  saveBalance();
+  renderBalance();
+
+  if (isSecond || !state.doubleRoll || state.firstRollDone) {
+    lockAfterRoll();
+    checkBankrupt();
+  } else {
+    state.firstRollDone = true;
+    document.getElementById('roll-btn').disabled = true;
+    showToast('First roll done. Roll again!');
+  }
+}
+
+function calcOdds(planets) {
+  const counts = {};
+  planets.forEach(p => { counts[p.name] = (counts[p.name] || 0) + 1; });
+  const max = Math.max(...Object.values(counts));
+  return (max / 4) * 100;
+}
+
+function lockAfterRoll() {
+  document.getElementById('roll-btn').disabled = true;
+  document.getElementById('roll-btn-2').style.display = 'none';
+  document.getElementById('action-grid').style.display = 'none';
+  document.getElementById('action-divider').style.display = 'none';
+
+  setTimeout(() => {
+    resetBetUI();
+  }, 2200);
+}
+
+function resetBetUI() {
+  state.betPlaced = false;
+  state.currentBet = 0;
+  state.sliderUsed = false;
+  state.retryUsed = false;
+  state.rollDone = false;
+  state.doubleRoll = false;
+  state.firstRollDone = false;
+
+  const input = document.getElementById('bet-input');
+  input.value = '';
+  input.disabled = false;
+  document.getElementById('place-bet-btn').disabled = false;
+
+  hide('slider-section');
+  hide('action-divider');
+  hide('action-grid');
+  hide('roll-divider');
+  hide('roll-section');
+  document.getElementById('roll-display').classList.remove('visible');
+}
+
+/* ── MATH CHALLENGE ── */
+let mathState = { questions: [], current: 0, wrongCount: 0 };
+
+function checkBankrupt() {
+  if (state.balance <= 0) {
+    state.balance = 0;
+    renderBalance();
+    resetBetUI();
+    startMath();
+  }
+}
+
+function startMath() {
+  const qs = [];
+  for (let i = 0; i < 10; i++) {
+    const a = Math.floor(Math.random() * 12) + 2;
+    const b = Math.floor(Math.random() * 12) + 2;
+    qs.push({ a, b, answer: a * b });
+  }
+  mathState = { questions: qs, current: 0, wrongCount: 0 };
+  document.getElementById('math-section').classList.add('visible');
+  renderMathQuestion();
+}
+
+function renderMathQuestion() {
+  const { questions, current } = mathState;
+  document.getElementById('math-progress').textContent = `Question ${current + 1} / 10`;
+  document.getElementById('math-question').textContent = `${questions[current].a} × ${questions[current].b} = ?`;
+  document.getElementById('math-input').value = '';
+  document.getElementById('math-input').focus();
+  hideMsg(document.getElementById('math-msg'));
+}
+
+function mathKeydown(e) {
+  if (e.key === 'Enter') checkMath();
+}
+
+function checkMath() {
+  const val = parseInt(document.getElementById('math-input').value, 10);
+  const msg = document.getElementById('math-msg');
+  const correct = mathState.questions[mathState.current].answer;
+
+  if (isNaN(val)) { showMsg(msg, 'Enter a number.'); return; }
+
+  if (val === correct) {
+    hideMsg(msg);
+    mathState.current++;
+    if (mathState.current >= 10) {
+      state.balance += 50;
+      saveBalance();
+      renderBalance();
+      document.getElementById('math-section').classList.remove('visible');
+      showToast('🎉 All correct! +50 🪨 earned!');
+    } else {
+      renderMathQuestion();
+    }
+  } else {
+    mathState.wrongCount++;
+    showMsg(msg, `Wrong! The answer was ${correct}. Starting over...`);
+    setTimeout(() => {
+      mathState.current = 0;
+      mathState.wrongCount = 0;
+      const qs = [];
+      for (let i = 0; i < 10; i++) {
+        const a = Math.floor(Math.random() * 12) + 2;
+        const b = Math.floor(Math.random() * 12) + 2;
+        qs.push({ a, b, answer: a * b });
+      }
+      mathState.questions = qs;
+      renderMathQuestion();
+    }, 1800);
+  }
+}
+
+/* ── TOAST ── */
+function showToast(text) {
+  const t = document.createElement('div');
+  t.textContent = text;
+  t.style.cssText = `
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#1a0a3a; border:1px solid #4e2a8e; border-radius:8px;
+    padding:10px 20px; color:#c8b8ff; font-size:0.9rem;
+    z-index:200; pointer-events:none;
+    animation: fadein 0.2s ease;
+  `;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+/* ── HELPERS ── */
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showMsg(el, text) { el.textContent = text; el.classList.add('visible'); }
+function hideMsg(el) { el.classList.remove('visible'); }
+
+/* ── START ── */
+init();
+</script>
+</body>
+</html>
