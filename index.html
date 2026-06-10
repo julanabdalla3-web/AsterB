@@ -661,10 +661,12 @@ function doBackOut() {
 }
 
 /* ── ALL IN ── */
+/* CHANGED: All In now ONLY sets your bet to your full balance.
+   It does NOT roll. You press the Roll button yourself when ready. */
 function doAllIn() {
   state.currentBet = state.balance;
   document.getElementById('bet-input').value = state.balance;
-  doRoll(false, true);
+  showToast('⚡ All in! Your bet is now ' + state.balance + ' 🪨 — press 🎲 Roll when ready.');
 }
 
 /* ── STANDBY ── */
